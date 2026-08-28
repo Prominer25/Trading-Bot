@@ -277,7 +277,7 @@
         <span style="font-size: 0.8rem;">BST (+6): <strong id="clock">--:--:--</strong></span>
     </div>
 
-    <!-- Live RSI Section -->
+    <!-- Live RSI Section (Real-Time WebSocket) -->
     <div class="card">
         <div class="card-header-flex">
             <h3><span class="pulse-dot"></span> Real-time Live RSI (WebSocket)</h3>
@@ -345,9 +345,10 @@
 
     <!-- Controls -->
     <div class="control-group">
-        <select id="symbolSelect" class="select-tf" style="width: 32%;" onchange="onAssetOrTimeframeChange()">
+        <select id="symbolSelect" class="select-tf" style="width: 45%;" onchange="onAssetOrTimeframeChange()">
             <option value="BTCUSDT" selected>BTC/USDT</option>
-            <option value="PAXGUSDT">XAU/USDT</option>
+            <!-- সমস্যা ৫ সমাধান: স্পট মার্কেট লেবেল সঠিক করা -->
+            <option value="PAXGUSDT">PAXG/USDT (Gold Token)</option>
         </select>
         <select id="timeframeSelect" class="select-tf" style="width: 25%;" onchange="onAssetOrTimeframeChange()">
             <option value="1m">1 Min</option>
@@ -383,10 +384,10 @@
         <div class="chart-container" id="tradingview_chart"></div>
     </div>
 
-    <!-- Accuracy Tracker -->
+    <!-- Accuracy Tracker (সমস্যা ৪ সমাধান: সঠিক লেবেলিং) -->
     <div class="card">
         <div class="card-header-flex">
-            <h3>📊 Accuracy Tracker</h3>
+            <h3>📊 Bot Signal Results (Backtest Ratio)</h3>
             <button class="btn-clear" onclick="resetStats()">Reset Data</button>
         </div>
         <div class="stats-grid">
@@ -478,10 +479,14 @@
             });
         }
 
+        // সমস্যা ১ সমাধান: মেইন টাইমফ্রেম বদলালে RSI টাইমফ্রেম অটো-সিঙ্ক হওয়া
         function onAssetOrTimeframeChange() {
             const selectedSymbol = document.getElementById('symbolSelect').value;
             const selectedInterval = document.getElementById('timeframeSelect').value;
-            const symbolLabel = selectedSymbol === 'PAXGUSDT' ? 'XAU/USDT' : 'BTC/USDT';
+            
+            document.getElementById('rsiTimeframeSelect').value = selectedInterval;
+
+            const symbolLabel = selectedSymbol === 'PAXGUSDT' ? 'PAXG/USDT (Gold Token)' : 'BTC/USDT';
 
             document.getElementById('selectedTFText').innerText = selectedInterval.toUpperCase();
             document.getElementById('selectedAssetTitle').innerText = symbolLabel;
@@ -592,11 +597,23 @@
             }
         }
 
+        // সমস্যা ৩ সমাধান: পরবর্তী ক্যান্ডেল ক্লোজিং টাইম নিখুঁতভাবে নির্ধারণ করা
+        function getNextCandleExpiryMs(timeframeStr) {
+            const now = Date.now();
+            let tfMinutes = 15;
+            if (timeframeStr === '1m') tfMinutes = 1;
+            if (timeframeStr === '5m') tfMinutes = 5;
+            if (timeframeStr === '1h') tfMinutes = 60;
+            
+            const intervalMs = tfMinutes * 60 * 1000;
+            return Math.ceil(now / intervalMs) * intervalMs;
+        }
+
         async function fetchBinanceDataAndAnalyze() {
             const btn = document.getElementById('signalBtn');
             const symbol = document.getElementById('symbolSelect').value;
             const timeframe = document.getElementById('timeframeSelect').value;
-            const assetName = symbol === 'PAXGUSDT' ? 'XAU' : 'BTC';
+            const assetName = symbol === 'PAXGUSDT' ? 'PAXG' : 'BTC';
 
             const useSR = document.getElementById('useSRFilter').checked;
             const useRSI = document.getElementById('useRSIFilter').checked;
@@ -684,12 +701,8 @@
                 const signalId = "sig_" + Date.now();
                 const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date());
 
-                let durationSec = 900;
-                if (timeframe === '1m') durationSec = 60;
-                if (timeframe === '5m') durationSec = 300;
-                if (timeframe === '1h') durationSec = 3600;
-
-                const expiryTime = Date.now() + (durationSec * 1000);
+                // সমস্যা ৩ প্রয়োগ: সঠিক এক্সপায়ারি সমাপনী সময়
+                const expiryTime = getNextCandleExpiryMs(timeframe);
 
                 const newSignal = {
                     id: signalId,
@@ -701,7 +714,7 @@
                     sl: sl.toFixed(1),
                     tp: tp.toFixed(1),
                     badgeClass: badgeClass,
-                    duration: durationSec,
+                    timeframe: timeframe,
                     expiryTime: expiryTime,
                     symbol: symbol,
                     status: 'PENDING',
@@ -725,8 +738,7 @@
             const now = Date.now();
             let expiry = Number(sig.expiryTime);
             if (isNaN(expiry) || !expiry) {
-                const dur = Number(sig.duration) || 900;
-                expiry = now + (dur * 1000);
+                expiry = getNextCandleExpiryMs(sig.timeframe || '15m');
                 sig.expiryTime = expiry;
             }
             return Math.max(0, Math.ceil((expiry - now) / 1000));
@@ -775,8 +787,7 @@
 
         function startCountdown(sig) {
             if (!sig.expiryTime || isNaN(sig.expiryTime)) {
-                const dur = Number(sig.duration) || 900;
-                sig.expiryTime = Date.now() + (dur * 1000);
+                sig.expiryTime = getNextCandleExpiryMs(sig.timeframe || '15m');
             }
 
             activeTimers[sig.id] = setInterval(() => {
@@ -790,7 +801,7 @@
                 if (timeLeft <= 0) {
                     clearInterval(activeTimers[sig.id]);
                     delete activeTimers[sig.id];
-                    checkSignalResult(sig.id, sig.direction, parseFloat(sig.entry), sig.symbol);
+                    checkSignalResult(sig.id, sig.direction, parseFloat(sig.entry), sig.symbol, sig.timeframe || '15m');
                 }
             }, 1000);
         }
@@ -803,11 +814,14 @@
             return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
-        async function checkSignalResult(signalId, direction, entryPrice, symbol) {
+        // সমস্যা ২ সমাধান: ক্যান্ডেল ক্লোজিং প্রাইস (Klines API) দিয়ে রেজাল্ট নির্ধারণ
+        async function checkSignalResult(signalId, direction, entryPrice, symbol, timeframe) {
             try {
-                const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+                const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=2`);
                 const data = await response.json();
-                const expiryPrice = parseFloat(data.price);
+                
+                // এক্সপায়ার হওয়া ক্যান্ডেলের নিখুঁত ক্লোজ প্রাইস
+                const expiryPrice = parseFloat(data[data.length - 2][4]); 
 
                 let isWin = false;
                 if (direction === "CALL" && expiryPrice > entryPrice) isWin = true;
@@ -830,7 +844,7 @@
                     renderHistory();
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Result checking error:", err);
             }
         }
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hill Traders - GMT+6 Timer Signal Bot Pro (Fixed)</title>
+    <title>Hill Traders - GMT+6 Timer Signal Bot Pro (News Shield)</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
@@ -12,6 +12,7 @@
             --accent-green: #00e676;
             --accent-red: #ff5252;
             --accent-blue: #64b5f6;
+            --accent-yellow: #ffc107;
             --text-main: #ffffff;
             --text-muted: #8a909d;
             --border-color: #232936;
@@ -51,6 +52,31 @@
             border-radius: 10px;
             padding: 12px;
             margin-bottom: 12px;
+        }
+
+        /* News Alert Box Styling */
+        .news-box {
+            transition: all 0.4s ease;
+            text-align: center;
+        }
+
+        .news-safe {
+            background: rgba(0, 230, 118, 0.05);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            color: var(--accent-green);
+        }
+
+        .news-warning-red {
+            background: rgba(255, 82, 82, 0.18) !important;
+            border: 2px solid var(--accent-red) !important;
+            color: #ffffff;
+            animation: pulseRed 1.8s infinite;
+        }
+
+        @keyframes pulseRed {
+            0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
         }
 
         .card-header-flex {
@@ -277,6 +303,13 @@
         <span style="font-size: 0.8rem;">BST (+6): <strong id="clock">--:--:--</strong></span>
     </div>
 
+    <!-- Forex Factory 15-Min High Impact News Shield Box -->
+    <div class="card news-box news-safe" id="newsAlertBox">
+        <div style="font-size: 0.85rem;" id="newsAlertText">
+            🔄 Loading Forex Factory News Data...
+        </div>
+    </div>
+
     <!-- Live RSI Section (Real-Time WebSocket) -->
     <div class="card">
         <div class="card-header-flex">
@@ -420,8 +453,8 @@
         let wsSocket = null;
         let klineDataCache = [];
         let activeTimers = {};
+        let highImpactNewsList = [];
         
-        // FIX 1: Global AudioContext to prevent AudioContext limit leak
         let audioCtx = null;
         function getAudioContext() {
             if (!audioCtx) {
@@ -433,11 +466,63 @@
             return audioCtx;
         }
 
-        // Clock GMT+6
+        // Clock GMT+6 & News Check Timer
         setInterval(() => {
             const options = { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
             document.getElementById('clock').innerText = new Intl.DateTimeFormat('en-US', options).format(new Date());
+            checkNewsFilterWindow();
         }, 1000);
+
+        // Fetch Forex Factory JSON via CORS Proxy
+        async function fetchForexFactoryNews() {
+            try {
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const targetUrl = encodeURIComponent('https://npoint.io/docs/ff_calendar_thisweek.json'); // Backup/FF endpoint
+                const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://www.forexfactory.com/ff_calendar_thisweek.json')}`);
+                
+                if(!res.ok) throw new Error("News Fetch Error");
+                const newsData = await res.json();
+                
+                // Filter only USD / High Impact (Red Folder)
+                highImpactNewsList = newsData.filter(item => item.impact === 'High' && (item.country === 'USD' || item.country === 'ALL'));
+                checkNewsFilterWindow();
+            } catch(e) {
+                document.getElementById('newsAlertBox').className = "card news-box news-safe";
+                document.getElementById('newsAlertText').innerHTML = `🛡️ <strong>FOREX FACTORY SHIELD ACTIVE</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">No High-Impact USD News Active Right Now</span>`;
+            }
+        }
+
+        function checkNewsFilterWindow() {
+            if (!highImpactNewsList.length) return;
+
+            const now = new Date().getTime();
+            let activeNewsEvent = null;
+
+            for (let news of highImpactNewsList) {
+                const newsTime = new Date(news.date).getTime();
+                const diffMinutes = (newsTime - now) / (1000 * 60);
+
+                // 15 Minutes BEFORE (-15) up to 15 Minutes AFTER (+15)
+                if (diffMinutes >= -15 && diffMinutes <= 15) {
+                    activeNewsEvent = { title: news.title, country: news.country, diffMinutes: diffMinutes };
+                    break;
+                }
+            }
+
+            const newsBox = document.getElementById('newsAlertBox');
+            const newsText = document.getElementById('newsAlertText');
+
+            if (activeNewsEvent) {
+                const mins = Math.abs(Math.round(activeNewsEvent.diffMinutes));
+                const statusStr = activeNewsEvent.diffMinutes > 0 ? `rises in ${mins} mins` : `released ${mins} mins ago`;
+                
+                newsBox.className = "card news-box news-warning-red";
+                newsText.innerHTML = `⚠️ <strong>HIGH IMPACT NEWS WARNING (NO TRADE ZONE)</strong><br><strong>${activeNewsEvent.country} - ${activeNewsEvent.title}</strong> (${statusStr})`;
+            } else {
+                newsBox.className = "card news-box news-safe";
+                newsText.innerHTML = `✅ <strong>SAFE MARKET WINDOW</strong><br><span style="font-size:0.72rem; color:var(--text-muted);">No High-Impact (Red Folder) USD News within 15 Minutes</span>`;
+            }
+        }
 
         function playSound(type) {
             if(!document.getElementById('useAudioAlert').checked) return;
@@ -582,7 +667,6 @@
             const currentPrice = klineDataCache[klineDataCache.length - 1];
             const rsi = calculateRSI(klineDataCache, 14).toFixed(1);
 
-            // FIX 4: Exclude running candle for stable Support/Resistance calculation
             const closedCandles = klineDataCache.slice(-31, -1);
             const resistance = closedCandles.length ? Math.max(...closedCandles) : currentPrice;
             const support = closedCandles.length ? Math.min(...closedCandles) : currentPrice;
@@ -647,7 +731,6 @@
                 const rsi = calculateRSI(closePrices, 14);
                 const ema200 = calculateEMA(closePrices, 200);
 
-                // FIX 4: S/R level calculated from CLOSED candles only (excluding current active candle)
                 const closedHighs = highPrices.slice(-31, -1);
                 const closedLows = lowPrices.slice(-31, -1);
                 const resistance = Math.max(...closedHighs);
@@ -815,7 +898,6 @@
                     clearInterval(activeTimers[sig.id]);
                     delete activeTimers[sig.id];
                     
-                    // FIX 3: Increased delay to 3.5s to ensure Binance closes candle server-side
                     setTimeout(() => {
                         checkSignalResult(sig.id, sig.direction, parseFloat(sig.entry), sig.symbol, sig.timeframe || '15m', sig.expiryTime);
                     }, 3500);
@@ -831,7 +913,6 @@
             return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
-        // FIX 2: Fetch wider historical klines & accurate timestamp matching for historical/reloaded signals
         async function checkSignalResult(signalId, direction, entryPrice, symbol, timeframe, expiryTime) {
             try {
                 const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=100`);
@@ -840,7 +921,6 @@
                 let targetCandle = null;
                 
                 if (expiryTime) {
-                    // Find candle that ended at or near signal expiry time
                     for (let i = data.length - 1; i >= 0; i--) {
                         const candleCloseTime = data[i][6];
                         if (candleCloseTime <= expiryTime + 5000) {
@@ -910,6 +990,7 @@
 
         renderChart('BTCUSDT', '15m');
         initWebSocket();
+        fetchForexFactoryNews();
         updateStats();
         renderHistory();
         initPendingTimers();

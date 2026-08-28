@@ -288,9 +288,9 @@
             </div>
             
             <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted);">
-                <span>0 (Oversold &lt;35)</span>
+                <span>0 (Oversold &le;35)</span>
                 <span>50</span>
-                <span>100 (Overbought &gt;65)</span>
+                <span>100 (Overbought &ge;65)</span>
             </div>
         </div>
     </div>
@@ -353,7 +353,7 @@
     <div class="filter-group">
         <label class="filter-option">
             <input type="checkbox" id="useSRFilter" checked>
-            <span>Support & Resistance</span>
+            <span>Support & Resistance (1.5%)</span>
         </label>
         <label class="filter-option">
             <input type="checkbox" id="useRSIFilter" checked>
@@ -483,10 +483,10 @@
                 rsiElem.innerText = rsi;
                 barFill.style.width = `${rsi}%`;
 
-                if (rsi < 35) {
+                if (rsi <= 35) {
                     rsiElem.style.color = '#00e676';
                     barFill.style.backgroundColor = '#00e676';
-                } else if (rsi > 65) {
+                } else if (rsi >= 65) {
                     rsiElem.style.color = '#ff5252';
                     barFill.style.backgroundColor = '#ff5252';
                 } else {
@@ -564,8 +564,9 @@
                 const isBullishCandle = lastClose > lastOpen;
                 const isBearishCandle = lastClose < lastOpen;
 
-                const nearSupport = ((currentPrice - support) / support) <= 0.0035;
-                const nearResistance = ((resistance - currentPrice) / currentPrice) <= 0.0035;
+                // 1.5% Range Threshold for Support & Resistance Check
+                const nearSupport = Math.abs((currentPrice - support) / support) <= 0.015;
+                const nearResistance = Math.abs((resistance - currentPrice) / currentPrice) <= 0.015;
 
                 // Dynamic Signal Conditions according to selected filters
                 let callCondition = isBullishCandle;
@@ -577,8 +578,8 @@
                 }
 
                 if (useRSI) {
-                    callCondition = callCondition && (rsi < 38);
-                    putCondition = putCondition && (rsi > 62);
+                    callCondition = callCondition && (rsi <= 35);
+                    putCondition = putCondition && (rsi >= 65);
                 }
 
                 let signalDirection = "";
@@ -603,7 +604,7 @@
                 }
                 else {
                     let alertMsg = `No Setup Found With Selected Filters!\nRSI: ${rsi.toFixed(1)}`;
-                    if (useSR) alertMsg += `\nSupport Check: ${nearSupport ? 'Passed' : 'Not near Support'}`;
+                    if (useSR) alertMsg += `\nSupport Check (1.5%): ${nearSupport ? 'Passed' : 'Not near Support'}\nResistance Check (1.5%): ${nearResistance ? 'Passed' : 'Not near Resistance'}`;
                     alert(alertMsg);
                     btn.disabled = false;
                     btn.innerText = "GET SIGNAL";

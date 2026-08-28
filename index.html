@@ -153,7 +153,32 @@
         .control-group {
             display: flex;
             gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
             margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .filter-option input[type="checkbox"] {
+            accent-color: var(--accent-green);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
         }
 
         .select-tf {
@@ -322,6 +347,18 @@
             <option value="1h">1 Hour</option>
         </select>
         <button class="btn-action" id="signalBtn" onclick="fetchBinanceDataAndAnalyze()">GET SIGNAL</button>
+    </div>
+
+    <!-- Filter Toggle Checkboxes -->
+    <div class="filter-group">
+        <label class="filter-option">
+            <input type="checkbox" id="useSRFilter" checked>
+            <span>Support & Resistance</span>
+        </label>
+        <label class="filter-option">
+            <input type="checkbox" id="useRSIFilter" checked>
+            <span>RSI Filter</span>
+        </label>
     </div>
 
     <!-- Live Chart -->
@@ -493,12 +530,15 @@
         fetchLiveAutoRSI();
         fetchLiveSRandPrice();
 
-        // Fetch Binance Data & Calculate Signal with Entry, SL & TP
+        // Fetch Binance Data & Calculate Signal
         async function fetchBinanceDataAndAnalyze() {
             const btn = document.getElementById('signalBtn');
             const symbol = document.getElementById('symbolSelect').value;
             const timeframe = document.getElementById('timeframeSelect').value;
             const assetName = symbol === 'PAXGUSDT' ? 'XAU' : 'BTC';
+
+            const useSR = document.getElementById('useSRFilter').checked;
+            const useRSI = document.getElementById('useRSIFilter').checked;
 
             btn.disabled = true;
             btn.innerText = "Analyzing...";
@@ -527,12 +567,26 @@
                 const nearSupport = ((currentPrice - support) / support) <= 0.0035;
                 const nearResistance = ((resistance - currentPrice) / currentPrice) <= 0.0035;
 
+                // Dynamic Signal Conditions according to selected filters
+                let callCondition = isBullishCandle;
+                let putCondition = isBearishCandle;
+
+                if (useSR) {
+                    callCondition = callCondition && nearSupport;
+                    putCondition = putCondition && nearResistance;
+                }
+
+                if (useRSI) {
+                    callCondition = callCondition && (rsi < 38);
+                    putCondition = putCondition && (rsi > 62);
+                }
+
                 let signalDirection = "";
                 let badgeClass = "";
                 let sl = 0, tp = 0;
 
                 // CALL (Buy) Calculation
-                if ((rsi < 38 || nearSupport) && isBullishCandle) {
+                if (callCondition) {
                     signalDirection = "CALL ⬆️";
                     badgeClass = "badge-call";
                     sl = support * 0.999;
@@ -540,7 +594,7 @@
                     tp = currentPrice + (risk * 2);
                 }
                 // PUT (Sell) Calculation
-                else if ((rsi > 62 || nearResistance) && isBearishCandle) {
+                else if (putCondition) {
                     signalDirection = "PUT ⬇️";
                     badgeClass = "badge-put";
                     sl = resistance * 1.001;
@@ -548,7 +602,9 @@
                     tp = currentPrice - (risk * 2);
                 }
                 else {
-                    alert(`No Strong Setup Found!\nRSI: ${rsi.toFixed(1)}\nPrice Action: Waiting for S/R Bounce.`);
+                    let alertMsg = `No Setup Found With Selected Filters!\nRSI: ${rsi.toFixed(1)}`;
+                    if (useSR) alertMsg += `\nSupport Check: ${nearSupport ? 'Passed' : 'Not near Support'}`;
+                    alert(alertMsg);
                     btn.disabled = false;
                     btn.innerText = "GET SIGNAL";
                     return;

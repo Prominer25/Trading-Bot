@@ -2,8 +2,8 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hill Traders - GMT+6 Timer Signal Bot Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hill Traders - Multi-Timeframe Bot Pro</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
@@ -17,18 +17,12 @@
             --border-color: #232936;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
             background-color: var(--bg-dark);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            padding: 12px;
-            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
         }
 
         .header {
@@ -36,89 +30,78 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 12px;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
         }
 
-        .header h2 {
-            font-size: 1.1rem;
-            color: var(--accent-green);
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 12px;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
 
         .card-header-flex {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        .card h3 {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-        }
-
-        .chart-container {
-            height: 320px;
-            width: 100%;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .stats-grid {
+        .stats-bar {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-top: 8px;
-        }
-
-        .stats-grid-2 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-top: 6px;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         .stat-box {
             background: rgba(255, 255, 255, 0.03);
-            padding: 8px 4px;
+            padding: 10px;
             border-radius: 6px;
             text-align: center;
         }
 
         .stat-label {
-            font-size: 0.68rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
         }
 
         .stat-value {
-            font-size: 0.85rem;
+            font-size: 1rem;
             font-weight: bold;
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .rsi-meter-container {
             background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
+            margin-bottom: 15px;
             text-align: center;
         }
 
         .rsi-progress-bg {
             width: 100%;
-            height: 10px;
+            height: 12px;
             background: #2a3142;
-            border-radius: 5px;
+            border-radius: 6px;
             overflow: hidden;
-            margin: 8px 0;
+            margin: 10px 0;
             position: relative;
         }
 
@@ -126,46 +109,18 @@
             height: 100%;
             width: 50%;
             background: #ffb74d;
-            transition: width 0.3s ease, background-color 0.3s ease;
-        }
-
-        .pulse-dot {
-            height: 8px;
-            width: 8px;
-            background-color: var(--accent-green);
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
-            box-shadow: 0 0 8px var(--accent-green);
-        }
-
-        .signal-display {
-            text-align: center;
-            padding: 10px 0;
-        }
-
-        .signal-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin: 6px 0;
-        }
-
-        .control-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
+            transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
         }
 
         .filter-group {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 12px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
             background: rgba(255, 255, 255, 0.02);
-            padding: 8px 12px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 6px;
             border: 1px solid var(--border-color);
-            font-size: 0.8rem;
         }
 
         .filter-option {
@@ -173,59 +128,31 @@
             align-items: center;
             gap: 6px;
             cursor: pointer;
+            font-size: 0.85rem;
         }
 
         .filter-option input[type="checkbox"] {
             accent-color: var(--accent-green);
-            width: 14px;
-            height: 14px;
+            width: 15px;
+            height: 15px;
             cursor: pointer;
-        }
-
-        .select-tf {
-            background: #1a202c;
-            color: #fff;
-            border: 1px solid var(--border-color);
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            outline: none;
-        }
-
-        .btn-action {
-            background: var(--accent-green);
-            color: #000;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            flex: 1;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 12px rgba(0, 230, 118, 0.2);
-            touch-action: manipulation;
-        }
-
-        .btn-action:disabled {
-            background: #444;
-            color: #888;
-            box-shadow: none;
         }
 
         .history-list {
             list-style: none;
-            max-height: 280px;
+            padding: 0;
+            margin: 0;
+            max-height: 350px;
             overflow-y: auto;
         }
 
         .history-item {
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid var(--border-color);
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             background: rgba(255, 255, 255, 0.01);
-            margin-bottom: 6px;
             border-radius: 6px;
+            margin-bottom: 6px;
         }
 
         .history-row {
@@ -235,183 +162,243 @@
         }
 
         .prices-info {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            margin-top: 6px;
+            margin-top: 8px;
             display: flex;
             justify-content: space-between;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 6px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 8px;
             border-radius: 4px;
         }
 
         .badge {
-            padding: 3px 6px;
+            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: bold;
+            display: inline-block;
         }
 
-        .badge-call { background: rgba(0, 230, 118, 0.2); color: var(--accent-green); }
-        .badge-put { background: rgba(255, 82, 82, 0.2); color: var(--accent-red); }
-        .badge-pending { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+        .badge-call { background: rgba(0, 230, 118, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-put { background: rgba(255, 82, 82, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .badge-pending { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid #ffc107; font-family: monospace; font-size: 0.85rem; }
         .badge-win { background: var(--accent-green); color: #000; }
         .badge-loss { background: var(--accent-red); color: #fff; }
+
+        .btn-action {
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .btn-action:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
 
         .btn-clear {
             background: transparent;
             border: 1px solid var(--border-color);
             color: var(--text-muted);
-            padding: 2px 8px;
+            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             cursor: pointer;
+        }
+
+        .select-tf {
+            background: #1a202c;
+            color: #fff;
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .control-panel-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .pulse-dot {
+            height: 8px;
+            width: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            box-shadow: 0 0 8px var(--accent-green);
         }
     </style>
 </head>
 <body>
 
-    <!-- Header (GMT+6 BD Time) -->
     <div class="header">
-        <h2>⚡ Hill Traders Bot Pro</h2>
-        <span style="font-size: 0.8rem;">BST (+6): <strong id="clock">--:--:--</strong></span>
-    </div>
-
-    <!-- Live RSI Section (Real-Time WebSocket) -->
-    <div class="card">
-        <div class="card-header-flex">
-            <h3><span class="pulse-dot"></span> Real-time Live RSI (WebSocket)</h3>
-            <select id="rsiTimeframeSelect" class="select-tf" onchange="initWebSocket()">
-                <option value="1m">1 Min</option>
-                <option value="5m">5 Min</option>
-                <option value="15m" selected>15 Min</option>
-                <option value="1h">1 Hour</option>
-            </select>
-        </div>
-        <div class="rsi-meter-container">
-            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
-                <span id="rsiSymbolText">BTC/USDT</span> (<span id="liveRsiTfText">15M</span>) Real-time RSI
-            </div>
-            <div style="font-size: 2rem; font-weight: bold; color: #ffb74d;" id="autoRsiValue">--</div>
-            
-            <div class="rsi-progress-bg">
-                <div class="rsi-progress-fill" id="rsiBarFill"></div>
-            </div>
-            
-            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted);">
-                <span>0 (Oversold &le;35)</span>
-                <span>50</span>
-                <span>100 (Overbought &ge;65)</span>
-            </div>
+        <h2>⚡ Hill Traders - Multi-Timeframe Bot Pro</h2>
+        <div>
+            <span>BST (+6) Time: <strong id="clock" style="color: var(--accent-green);">--:--:--</strong></span>
         </div>
     </div>
 
-    <!-- Live Signal Section with S/R & Trade Levels -->
-    <div class="card signal-display">
-        <h3>🎯 Signal & Trade Levels</h3>
-        <div class="signal-title" id="signalType">WAITING</div>
-        <p style="font-size: 0.8rem; color: var(--text-muted);"><span id="selectedAssetTitle">BTC/USDT</span> | Timeframe: <strong id="selectedTFText">15M</strong></p>
-        
-        <!-- Support, Price & Resistance Box -->
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Live Support (S)</div>
-                <div class="stat-value" id="supportVal" style="color: var(--accent-green);">$0.00</div>
+    <div class="dashboard-grid">
+        <div>
+            <!-- Live Chart -->
+            <div class="card">
+                <h3>📈 Live Market Chart (<span id="chartTfText">BTC/USDT 15M</span>)</h3>
+                <div id="tradingview_chart" style="height: 400px;"></div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Live Price</div>
-                <div class="stat-value" id="currentPrice" style="color: #ffb74d;">$0.00</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Live Resistance (R)</div>
-                <div class="stat-value" id="resistanceVal" style="color: var(--accent-red);">$0.00</div>
+
+            <!-- Bot Control -->
+            <div class="card">
+                <div class="control-panel-row">
+                    <h3 style="margin:0;">🎛️ Live Analysis Control</h3>
+                    <div style="display:flex; gap:8px;">
+                        <select id="symbolSelect" class="select-tf" onchange="onAssetOrTimeframeChange()">
+                            <option value="BTCUSDT" selected>BTC/USDT</option>
+                            <option value="PAXGUSDT">XAU/USDT</option>
+                        </select>
+                        <select id="timeframeSelect" class="select-tf" onchange="onAssetOrTimeframeChange()">
+                            <option value="1m">1m</option>
+                            <option value="5m">5m</option>
+                            <option value="15m" selected>15m</option>
+                            <option value="30m">30m</option>
+                            <option value="1h">1h</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-action" id="signalBtn" onclick="fetchBinanceDataAndAnalyze()">ANALYZE MARKET & GET SIGNAL</button>
+
+                <!-- Filters -->
+                <div class="filter-group">
+                    <label class="filter-option">
+                        <input type="checkbox" id="useSRFilter" checked>
+                        <span>Support & Resistance (1.5%)</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" id="useRSIFilter" checked>
+                        <span>RSI Indicator Filter</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" id="useEMAFilter" checked>
+                        <span>EMA 200 Trend Filter</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" id="useAudioAlert" checked>
+                        <span>Sound Alert 🔊</span>
+                    </label>
+                </div>
             </div>
         </div>
 
-        <!-- Entry, SL & TP Box -->
-        <div class="stats-grid-2">
-            <div class="stat-box">
-                <div class="stat-label">Entry</div>
-                <div class="stat-value" id="entryVal" style="color: var(--accent-blue);">$0.00</div>
+        <div>
+            <!-- Live RSI Panel -->
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3><span class="pulse-dot"></span> Real-Time Live RSI</h3>
+                    <select id="rsiTimeframeSelect" class="select-tf" onchange="initWebSocket()">
+                        <option value="1m">1m</option>
+                        <option value="5m">5m</option>
+                        <option value="15m" selected>15m</option>
+                        <option value="30m">30m</option>
+                        <option value="1h">1h</option>
+                    </select>
+                </div>
+                <div class="rsi-meter-container">
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:5px;">
+                        <span id="rsiSymbolText">BTC/USDT</span> (<span id="liveRsiTfText">15M</span>) Live RSI
+                    </div>
+                    <div style="font-size: 2.5rem; font-weight: bold; color: #ffb74d;" id="autoRsiValue">--</div>
+                    
+                    <div class="rsi-progress-bg">
+                        <div class="rsi-progress-fill" id="rsiBarFill"></div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-muted);">
+                        <span>0 (Oversold &le;35)</span>
+                        <span>50</span>
+                        <span>100 (Overbought &ge;65)</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Stop Loss (SL)</div>
-                <div class="stat-value" id="slVal" style="color: var(--accent-red);">$0.00</div>
+
+            <!-- Stats -->
+            <div class="card">
+                <div class="card-header-flex">
+                    <h3 style="margin:0;">📊 Accuracy Tracker</h3>
+                    <button class="btn-clear" onclick="resetStats()">Reset Data</button>
+                </div>
+                <div class="stats-bar">
+                    <div class="stat-box">
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-value" id="winRateVal" style="color: var(--accent-green);">0%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Wins</div>
+                        <div class="stat-value" id="winCount" style="color: var(--accent-green);">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Losses</div>
+                        <div class="stat-value" id="lossCount" style="color: var(--accent-red);">0</div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Take Profit (TP)</div>
-                <div class="stat-value" id="tpVal" style="color: var(--accent-green);">$0.00</div>
+
+            <!-- Live Signal Panel -->
+            <div class="card" style="text-align: center;">
+                <h3>🎯 Market Signal & Trade Levels</h3>
+                <h1 id="signalType" style="margin: 10px 0; font-size: 2.2rem;">WAITING</h1>
+                <p>Asset: <strong id="selectedAssetTitle">BTC/USDT</strong> | Target TF: <strong id="analysisTfText">15M</strong></p>
+                
+                <div class="stats-bar" style="margin-top: 15px;">
+                    <div class="stat-box">
+                        <div class="stat-label">Support (S)</div>
+                        <div class="stat-value" id="supportVal" style="color: var(--accent-green);">$0.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Real Price</div>
+                        <div class="stat-value" id="currentPrice" style="color: #64b5f6;">$0.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Resistance (R)</div>
+                        <div class="stat-value" id="resistanceVal" style="color: var(--accent-red);">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-box">
+                        <div class="stat-label">Entry</div>
+                        <div class="stat-value" id="entryVal" style="color: var(--accent-blue);">$0.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Stop Loss (SL)</div>
+                        <div class="stat-value" id="slVal" style="color: var(--accent-red);">$0.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Take Profit (TP)</div>
+                        <div class="stat-value" id="tpVal" style="color: var(--accent-green);">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="card">
+                <h3>📜 Signal History & Countdown</h3>
+                <ul class="history-list" id="historyList"></ul>
             </div>
         </div>
-    </div>
-
-    <!-- Controls -->
-    <div class="control-group">
-        <select id="symbolSelect" class="select-tf" style="width: 32%;" onchange="onAssetOrTimeframeChange()">
-            <option value="BTCUSDT" selected>BTC/USDT</option>
-            <option value="PAXGUSDT">XAU/USDT</option>
-        </select>
-        <select id="timeframeSelect" class="select-tf" style="width: 25%;" onchange="onAssetOrTimeframeChange()">
-            <option value="1m">1 Min</option>
-            <option value="5m">5 Min</option>
-            <option value="15m" selected>15 Min</option>
-            <option value="1h">1 Hour</option>
-        </select>
-        <button class="btn-action" id="signalBtn" onclick="fetchBinanceDataAndAnalyze()">GET SIGNAL</button>
-    </div>
-
-    <!-- Enhanced Filter Controls -->
-    <div class="filter-group">
-        <label class="filter-option">
-            <input type="checkbox" id="useSRFilter" checked>
-            <span>S/R (1.5%)</span>
-        </label>
-        <label class="filter-option">
-            <input type="checkbox" id="useRSIFilter" checked>
-            <span>RSI Filter</span>
-        </label>
-        <label class="filter-option">
-            <input type="checkbox" id="useEMAFilter" checked>
-            <span>EMA 200 Trend</span>
-        </label>
-        <label class="filter-option">
-            <input type="checkbox" id="useAudioAlert" checked>
-            <span>Sound Alert 🔊</span>
-        </label>
-    </div>
-
-    <!-- Live Chart -->
-    <div class="card">
-        <h3>📈 Live Chart (<span id="chartSymbolText">BTC/USDT</span> - GMT+6)</h3>
-        <div class="chart-container" id="tradingview_chart"></div>
-    </div>
-
-    <!-- Accuracy Tracker -->
-    <div class="card">
-        <div class="card-header-flex">
-            <h3>📊 Accuracy Tracker</h3>
-            <button class="btn-clear" onclick="resetStats()">Reset Data</button>
-        </div>
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Win Rate</div>
-                <div class="stat-value" id="winRateVal" style="color: var(--accent-green);">0%</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Wins</div>
-                <div class="stat-value" id="winCount" style="color: var(--accent-green);">0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Losses</div>
-                <div class="stat-value" id="lossCount" style="color: var(--accent-red);">0</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Signal History -->
-    <div class="card">
-        <h3>📜 Signal History & Countdown</h3>
-        <ul class="history-list" id="historyList"></ul>
     </div>
 
     <script>
@@ -420,15 +407,15 @@
         let signalHistory = JSON.parse(localStorage.getItem('ht_history')) || [];
         let wsSocket = null;
         let klineDataCache = [];
-        let activeTimers = {};
+        let activeIntervals = {};
 
-        // Clock GMT+6
+        // Clock
         setInterval(() => {
             const options = { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
             document.getElementById('clock').innerText = new Intl.DateTimeFormat('en-US', options).format(new Date());
         }, 1000);
 
-        // Web Audio Synth for Sounds
+        // Sound Notification
         function playSound(type) {
             if(!document.getElementById('useAudioAlert').checked) return;
             try {
@@ -439,15 +426,15 @@
                 gain.connect(ctx.destination);
                 
                 if (type === 'signal') {
-                    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+                    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
                     gain.gain.setValueAtTime(0.3, ctx.currentTime);
                     osc.start();
                     osc.stop(ctx.currentTime + 0.3);
                 } else if (type === 'win') {
-                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
                     gain.gain.setValueAtTime(0.3, ctx.currentTime);
                     osc.start();
                     osc.stop(ctx.currentTime + 0.4);
@@ -465,7 +452,7 @@
 
         function renderChart(symbol, interval) {
             document.getElementById('tradingview_chart').innerHTML = '';
-            const tvInterval = interval === '1m' ? '1' : interval === '5m' ? '5' : interval === '15m' ? '15' : '60';
+            const tvInterval = interval === '1m' ? '1' : interval === '5m' ? '5' : interval === '15m' ? '15' : interval === '30m' ? '30' : '60';
             
             new TradingView.widget({
                 "autosize": true,
@@ -475,9 +462,6 @@
                 "theme": "dark",
                 "style": "1",
                 "locale": "en",
-                "hide_top_toolbar": true,
-                "hide_legend": true,
-                "save_image": false,
                 "container_id": "tradingview_chart"
             });
         }
@@ -487,17 +471,17 @@
             const selectedInterval = document.getElementById('timeframeSelect').value;
             const symbolLabel = selectedSymbol === 'PAXGUSDT' ? 'XAU/USDT' : 'BTC/USDT';
 
-            document.getElementById('selectedTFText').innerText = selectedInterval.toUpperCase();
+            document.getElementById('chartTfText').innerText = `${symbolLabel} ${selectedInterval.toUpperCase()}`;
+            document.getElementById('analysisTfText').innerText = selectedInterval.toUpperCase();
             document.getElementById('selectedAssetTitle').innerText = symbolLabel;
-            document.getElementById('chartSymbolText').innerText = symbolLabel;
             document.getElementById('rsiSymbolText').innerText = symbolLabel;
 
             renderChart(selectedSymbol, selectedInterval);
             initWebSocket();
         }
 
-        // EMA Calculation
         function calculateEMA(prices, period) {
+            if (prices.length < period) return prices[prices.length - 1];
             const k = 2 / (period + 1);
             let ema = prices[0];
             for (let i = 1; i < prices.length; i++) {
@@ -506,7 +490,6 @@
             return ema;
         }
 
-        // RSI Calculation
         function calculateRSI(prices, period = 14) {
             if (prices.length <= period) return 50;
             let gains = 0, losses = 0;
@@ -532,16 +515,19 @@
             return 100 - (100 / (1 + (avgGain / avgLoss)));
         }
 
-        // WebSocket Stream for Instant Live Data
+        // WebSocket Stream with Auto Reconnect
         async function initWebSocket() {
-            if (wsSocket) wsSocket.close();
+            if (wsSocket) {
+                wsSocket.onclose = null;
+                wsSocket.close();
+            }
 
             const symbol = document.getElementById('symbolSelect').value.toLowerCase();
             const timeframe = document.getElementById('rsiTimeframeSelect').value;
             document.getElementById('liveRsiTfText').innerText = timeframe.toUpperCase();
 
             try {
-                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=${timeframe}&limit=100`);
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=${timeframe}&limit=200`);
                 const data = await res.json();
                 klineDataCache = data.map(c => parseFloat(c[4]));
                 updateLiveIndicators();
@@ -563,6 +549,10 @@
                     }
                 }
                 updateLiveIndicators();
+            };
+
+            wsSocket.onclose = () => {
+                setTimeout(initWebSocket, 3000);
             };
         }
 
@@ -599,7 +589,12 @@
             }
         }
 
-        // Fetch Data & Process Signal
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
         async function fetchBinanceDataAndAnalyze() {
             const btn = document.getElementById('signalBtn');
             const symbol = document.getElementById('symbolSelect').value;
@@ -611,7 +606,7 @@
             const useEMA = document.getElementById('useEMAFilter').checked;
 
             btn.disabled = true;
-            btn.innerText = "Analyzing...";
+            btn.innerText = `Analyzing ${assetName} (${timeframe.toUpperCase()})...`;
 
             try {
                 const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=200`);
@@ -660,30 +655,30 @@
                 let sl = 0, tp = 0;
 
                 if (callCondition) {
-                    signalDirection = "CALL ⬆️";
+                    signalDirection = "CALL";
                     badgeClass = "badge-call";
                     sl = support * 0.999;
                     const risk = currentPrice - sl;
                     tp = currentPrice + (risk * 2);
                 } else if (putCondition) {
-                    signalDirection = "PUT ⬇️";
+                    signalDirection = "PUT";
                     badgeClass = "badge-put";
                     sl = resistance * 1.001;
                     const risk = sl - currentPrice;
                     tp = currentPrice - (risk * 2);
                 } else {
-                    let alertMsg = `No Setup Found With Selected Filters!\nRSI: ${rsi.toFixed(1)}`;
-                    if (useEMA) alertMsg += `\nEMA 200 Trend Check: ${currentPrice > ema200 ? 'Bullish Trend' : 'Bearish Trend'}`;
+                    let alertMsg = `No Trade Setup Found With Current Filters!\nRSI: ${rsi.toFixed(1)}`;
+                    if (useEMA) alertMsg += `\nEMA 200 Trend: ${currentPrice > ema200 ? 'Bullish' : 'Bearish'}`;
                     alert(alertMsg);
                     btn.disabled = false;
-                    btn.innerText = "GET SIGNAL";
+                    btn.innerText = "ANALYZE MARKET & GET SIGNAL";
                     return;
                 }
 
                 playSound('signal');
 
-                document.getElementById('signalType').innerText = signalDirection;
-                document.getElementById('signalType').style.color = signalDirection.includes("CALL") ? "#00e676" : "#ff5252";
+                document.getElementById('signalType').innerText = signalDirection + " 🎯";
+                document.getElementById('signalType').style.color = signalDirection === "CALL" ? "#00e676" : "#ff5252";
 
                 document.getElementById('entryVal').innerText = '$' + currentPrice.toFixed(1);
                 document.getElementById('slVal').innerText = '$' + sl.toFixed(1);
@@ -694,23 +689,26 @@
 
                 let durationSec = 900;
                 if (timeframe === '1m') durationSec = 60;
-                if (timeframe === '5m') durationSec = 300;
-                if (timeframe === '1h') durationSec = 3600;
+                else if (timeframe === '5m') durationSec = 300;
+                else if (timeframe === '15m') durationSec = 900;
+                else if (timeframe === '30m') durationSec = 1800;
+                else if (timeframe === '1h') durationSec = 3600;
 
-                const expiryTime = Date.now() + (durationSec * 1000);
+                const expiryTimestamp = Date.now() + (durationSec * 1000);
 
                 const newSignal = {
                     id: signalId,
                     asset: assetName,
                     tf: timeframe.toUpperCase(),
                     time: timeStr,
-                    direction: signalDirection.split(' ')[0],
+                    direction: signalDirection,
                     entry: currentPrice.toFixed(1),
                     sl: sl.toFixed(1),
                     tp: tp.toFixed(1),
                     badgeClass: badgeClass,
                     duration: durationSec,
-                    expiryTime: expiryTime,
+                    expiryTimestamp: expiryTimestamp,
+                    startTime: Date.now(),
                     symbol: symbol,
                     status: 'PENDING',
                     exit: '--'
@@ -719,13 +717,91 @@
                 signalHistory.unshift(newSignal);
                 saveState();
                 renderHistory();
-                initPendingTimers();
+                trackSignal(newSignal);
 
             } catch (error) {
-                alert("Network error with Binance API");
+                alert("Error connecting to Binance API.");
+                console.error(error);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "GET SIGNAL";
+                btn.innerText = "ANALYZE MARKET & GET SIGNAL";
+            }
+        }
+
+        // Persistent Timer and Tracking
+        function trackSignal(sig) {
+            if (sig.status !== 'PENDING') return;
+
+            if (activeIntervals[sig.id]) clearInterval(activeIntervals[sig.id]);
+
+            activeIntervals[sig.id] = setInterval(() => {
+                const now = Date.now();
+                const remainingSec = Math.max(0, (sig.expiryTimestamp - now) / 1000);
+
+                const timerElement = document.getElementById(`timer_${sig.id}`);
+                if (timerElement) {
+                    timerElement.innerText = `⏳ ${formatTime(remainingSec)}`;
+                }
+
+                if (remainingSec <= 0) {
+                    clearInterval(activeIntervals[sig.id]);
+                    delete activeIntervals[sig.id];
+                    evaluateHighLowResult(sig);
+                }
+            }, 1000);
+        }
+
+        // Accurate High/Low TP & SL evaluation
+        async function evaluateHighLowResult(sig) {
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${sig.symbol}&interval=1m&startTime=${sig.startTime}&endTime=${sig.expiryTimestamp}`);
+                const candles = await res.json();
+
+                let isWin = false;
+                let isLoss = false;
+                let exitPrice = candles.length > 0 ? parseFloat(candles[candles.length - 1][4]) : parseFloat(sig.entry);
+
+                const entry = parseFloat(sig.entry);
+                const tp = parseFloat(sig.tp);
+                const sl = parseFloat(sig.sl);
+
+                for (let candle of candles) {
+                    const high = parseFloat(candle[2]);
+                    const low = parseFloat(candle[3]);
+
+                    if (sig.direction === 'CALL') {
+                        if (high >= tp) { isWin = true; exitPrice = tp; break; }
+                        if (low <= sl) { isLoss = true; exitPrice = sl; break; }
+                    } else if (sig.direction === 'PUT') {
+                        if (low <= tp) { isWin = true; exitPrice = tp; break; }
+                        if (high >= sl) { isLoss = true; exitPrice = sl; break; }
+                    }
+                }
+
+                if (!isWin && !isLoss) {
+                    if (sig.direction === 'CALL' && exitPrice > entry) isWin = true;
+                    else if (sig.direction === 'PUT' && exitPrice < entry) isWin = true;
+                    else isLoss = true;
+                }
+
+                const sigIndex = signalHistory.findIndex(s => s.id === sig.id);
+                if (sigIndex !== -1) {
+                    signalHistory[sigIndex].status = isWin ? 'WIN' : 'LOSS';
+                    signalHistory[sigIndex].exit = exitPrice.toFixed(1);
+                    
+                    if (isWin) {
+                        totalWins++;
+                        playSound('win');
+                    } else {
+                        totalLosses++;
+                        playSound('loss');
+                    }
+                    saveState();
+                    updateStats();
+                    renderHistory();
+                }
+            } catch (err) {
+                console.error("Evaluation error:", err);
             }
         }
 
@@ -738,8 +814,7 @@
                 li.id = sig.id;
                 li.className = 'history-item';
                 
-                let remaining = Math.max(0, Math.ceil(((sig.expiryTime || (Date.now() + sig.duration * 1000)) - Date.now()) / 1000));
-                let badgeHTML = `<span class="badge badge-pending status-badge" id="timer_${sig.id}">⏳ ${formatTime(remaining)}</span>`;
+                let badgeHTML = `<span class="badge badge-pending status-badge" id="timer_${sig.id}">⏳ Calculating...</span>`;
                 if(sig.status === 'WIN') badgeHTML = `<span class="badge badge-win">WIN</span>`;
                 if(sig.status === 'LOSS') badgeHTML = `<span class="badge badge-loss">LOSS</span>`;
 
@@ -755,78 +830,15 @@
                         <span>Entry: <strong>$${sig.entry}</strong></span>
                         <span>SL: <strong style="color:var(--accent-red);">$${sig.sl}</strong></span>
                         <span>TP: <strong style="color:var(--accent-green);">$${sig.tp}</strong></span>
-                        <span id="exit_${sig.id}">Exit: <strong>$${sig.exit}</strong></span>
+                        <span id="exit_${sig.id}">Exit: <strong style="color:${sig.status === 'WIN' ? '#00e676' : sig.status === 'LOSS' ? '#ff5252' : '#8a909d'};">$${sig.exit}</strong></span>
                     </div>
                 `;
                 historyList.appendChild(li);
-            });
-        }
 
-        function initPendingTimers() {
-            signalHistory.forEach(sig => {
-                if (sig.status === 'PENDING' && !activeTimers[sig.id]) {
-                    startCountdown(sig);
+                if (sig.status === 'PENDING') {
+                    trackSignal(sig);
                 }
             });
-        }
-
-        function startCountdown(sig) {
-            if (!sig.expiryTime) {
-                sig.expiryTime = Date.now() + (sig.duration * 1000);
-            }
-
-            activeTimers[sig.id] = setInterval(() => {
-                const now = Date.now();
-                const timeLeft = Math.max(0, Math.ceil((sig.expiryTime - now) / 1000));
-                
-                const timerElement = document.getElementById(`timer_${sig.id}`);
-                if (timerElement) {
-                    timerElement.innerText = `⏳ ${formatTime(timeLeft)}`;
-                }
-
-                if (timeLeft <= 0) {
-                    clearInterval(activeTimers[sig.id]);
-                    delete activeTimers[sig.id];
-                    checkSignalResult(sig.id, sig.direction, parseFloat(sig.entry), sig.symbol);
-                }
-            }, 1000);
-        }
-
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-        }
-
-        async function checkSignalResult(signalId, direction, entryPrice, symbol) {
-            try {
-                const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-                const data = await response.json();
-                const expiryPrice = parseFloat(data.price);
-
-                let isWin = false;
-                if (direction === "CALL" && expiryPrice > entryPrice) isWin = true;
-                if (direction === "PUT" && expiryPrice < entryPrice) isWin = true;
-
-                const sigIndex = signalHistory.findIndex(s => s.id === signalId);
-                if (sigIndex !== -1) {
-                    signalHistory[sigIndex].status = isWin ? 'WIN' : 'LOSS';
-                    signalHistory[sigIndex].exit = expiryPrice.toFixed(1);
-                    
-                    if (isWin) {
-                        totalWins++;
-                        playSound('win');
-                    } else {
-                        totalLosses++;
-                        playSound('loss');
-                    }
-                    saveState();
-                    updateStats();
-                    renderHistory();
-                }
-            } catch (err) {
-                console.error(err);
-            }
         }
 
         function updateStats() {
@@ -845,23 +857,22 @@
 
         function resetStats() {
             if(confirm("Are you sure you want to clear all history and tracker statistics?")) {
-                Object.keys(activeTimers).forEach(id => clearInterval(activeTimers[id]));
-                activeTimers = {};
                 totalWins = 0;
                 totalLosses = 0;
                 signalHistory = [];
+                Object.values(activeIntervals).forEach(clearInterval);
+                activeIntervals = {};
                 localStorage.clear();
                 updateStats();
                 renderHistory();
             }
         }
 
-        // Init App
+        // App Init
         renderChart('BTCUSDT', '15m');
         initWebSocket();
         updateStats();
         renderHistory();
-        initPendingTimers();
     </script>
 </body>
 </html>
